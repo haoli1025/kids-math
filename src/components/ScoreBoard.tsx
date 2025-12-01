@@ -29,7 +29,7 @@ export function ScoreBoard({ score, totalAttempts, streak }: ScoreBoardProps) {
         </div>
 
         {streak > 0 && (
-          <div className="flex items-center gap-2 bg-orange-100 rounded-2xl px-3 sm:px-4 py-2 sm:py-3 animate-bounce w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-orange-100 rounded-2xl px-3 sm:px-4 py-2 sm:py-3 w-full sm:w-auto">
             <Zap className="text-orange-600 fill-orange-600 size-5 sm:size-6 flex-shrink-0" />
             <div>
               <div className="text-xs sm:text-sm text-orange-700">On Fire! 🔥</div>

@@ -14,7 +14,7 @@ export function LevelSelector({ onSelectLevel }: LevelSelectorProps) {
       <div className="max-w-2xl mx-auto w-full flex flex-col flex-1">
         <AppTitle />
 
-        <div className="flex flex-col flex-1 justify-center">
+        <div className="flex flex-col flex-1 justify-start pt-4 sm:pt-6 md:pt-8">
           <div className="bg-white rounded-3xl shadow-2xl p-6 sm:p-12">
           <h2 className="text-center mb-6 sm:mb-8 text-2xl sm:text-3xl md:text-4xl">
             Choose Your Level! 🎯

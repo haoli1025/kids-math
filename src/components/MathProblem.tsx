@@ -136,6 +136,7 @@ export function MathProblem({ problem, onAnswer, disabled, level }: MathProblemP
         <Input
           ref={inputRef}
           type="number"
+          inputMode="numeric"
           value={userAnswer}
           onChange={(e) => setUserAnswer(e.target.value)}
           disabled={disabled}

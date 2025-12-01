@@ -172,7 +172,7 @@ export default function App() {
           }
         />
         
-        <div className="flex flex-col flex-1 justify-center gap-4 sm:gap-6">
+        <div className="flex flex-col flex-1 justify-start pt-4 sm:pt-6 md:pt-8 gap-4 sm:gap-6">
           <ScoreBoard 
             score={score} 
             totalAttempts={totalAttempts}

@@ -60,6 +60,28 @@ npm run build
 
 The build output will be in the `build/` directory.
 
+## Deployment
+
+### Deploy to Vercel
+
+This project is configured for easy deployment on Vercel:
+
+1. **Connect your GitHub repository to Vercel:**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "New Project"
+   - Import your GitHub repository
+
+2. **Vercel will automatically detect the Vite configuration:**
+   - Build Command: `npm run build`
+   - Output Directory: `build`
+   - Install Command: `npm install`
+
+3. **Deploy:**
+   - Vercel will automatically deploy on every push to your main branch
+   - You'll get a unique URL for your deployment
+
+The project includes a `vercel.json` configuration file for optimal deployment settings.
+
 ## Project Structure
 
 ```

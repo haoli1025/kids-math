@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { MathProblem } from './components/MathProblem';
-import { ScoreBoard } from './components/ScoreBoard';
 import { FeedbackMessage } from './components/FeedbackMessage';
 import { LevelSelector, AgeLevel } from './components/LevelSelector';
-import { AppTitle } from './components/AppTitle';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { FinalScore } from './components/FinalScore';
+import { Sparkles, ArrowLeft } from 'lucide-react';
 import { Button } from './components/ui/button';
 
 type Operation = '+' | '-' | '*' | '/';
@@ -20,17 +19,36 @@ export default function App() {
   const [level, setLevel] = useState<AgeLevel | null>(null);
   const [problem, setProblem] = useState<Problem | null>(null);
   const [score, setScore] = useState(0);
-  const [totalAttempts, setTotalAttempts] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState(1);
   const [feedback, setFeedback] = useState<'correct' | 'incorrect' | null>(null);
-  const [streak, setStreak] = useState(0);
+  const [showFinalScore, setShowFinalScore] = useState(false);
+  const [usedProblems, setUsedProblems] = useState<Set<string>>(new Set());
+  const usedProblemsRef = useRef<Set<string>>(new Set());
+
+  const TOTAL_QUESTIONS = 10;
 
   useEffect(() => {
-    if (level) {
+    if (level && !showFinalScore) {
+      // Reset used problems when starting a new level
+      usedProblemsRef.current = new Set();
+      setUsedProblems(new Set());
       setProblem(generateProblem(level));
     }
-  }, [level]);
+  }, [level, showFinalScore]);
 
-  function generateProblem(currentLevel: AgeLevel): Problem {
+  // Create a unique key for a problem (handles commutative operations)
+  function getProblemKey(p: Problem): string {
+    // For commutative operations (+, *), normalize order
+    if (p.operation === '+' || p.operation === '*') {
+      const [smaller, larger] = p.num1 <= p.num2 ? [p.num1, p.num2] : [p.num2, p.num1];
+      return `${smaller}${p.operation}${larger}`;
+    }
+    // For non-commutative operations (-, /), order matters
+    return `${p.num1}${p.operation}${p.num2}`;
+  }
+
+  // Generate a single problem candidate (without checking duplicates)
+  function generateProblemCandidate(currentLevel: AgeLevel): Problem {
     let operation: Operation;
     let num1: number;
     let num2: number;
@@ -99,33 +117,61 @@ export default function App() {
     return { num1, num2, operation, answer };
   }
 
+  function generateProblem(currentLevel: AgeLevel): Problem {
+    const maxAttempts = 1000; // Prevent infinite loop
+    let attempts = 0;
+    
+    while (attempts < maxAttempts) {
+      const candidate = generateProblemCandidate(currentLevel);
+      const problemKey = getProblemKey(candidate);
+      
+      // If this problem hasn't been used, mark it and return it
+      if (!usedProblemsRef.current.has(problemKey)) {
+        usedProblemsRef.current.add(problemKey);
+        setUsedProblems(new Set(usedProblemsRef.current));
+        return candidate;
+      }
+      
+      attempts++;
+    }
+    
+    // If we've exhausted attempts (very unlikely), return a candidate anyway
+    // This handles edge cases where all possible problems have been used
+    return generateProblemCandidate(currentLevel);
+  }
+
   function handleAnswer(userAnswer: number) {
     if (!problem) return;
     
     const isCorrect = userAnswer === problem.answer;
     setFeedback(isCorrect ? 'correct' : 'incorrect');
-    setTotalAttempts(prev => prev + 1);
 
     if (isCorrect) {
       setScore(prev => prev + 1);
-      setStreak(prev => prev + 1);
-    } else {
-      setStreak(0);
     }
 
-    // Generate new problem after short delay
+    // Generate new problem or show final score after short delay
     setTimeout(() => {
-      if (level) {
-        setProblem(generateProblem(level));
+      if (currentQuestion >= TOTAL_QUESTIONS) {
+        // Show final score after last question
+        setShowFinalScore(true);
+      } else {
+        // Move to next question
+        setCurrentQuestion(prev => prev + 1);
+        if (level) {
+          setProblem(generateProblem(level));
+        }
       }
       setFeedback(null);
     }, 1500);
   }
 
-  function handleReset() {
+  function handlePlayAgain() {
     setScore(0);
-    setTotalAttempts(0);
-    setStreak(0);
+    setCurrentQuestion(1);
+    setShowFinalScore(false);
+    usedProblemsRef.current = new Set(); // Reset used problems for new session
+    setUsedProblems(new Set());
     if (level) {
       setProblem(generateProblem(level));
     }
@@ -135,61 +181,85 @@ export default function App() {
   function handleChangeLevel() {
     setLevel(null);
     setScore(0);
-    setTotalAttempts(0);
-    setStreak(0);
+    setCurrentQuestion(1);
     setProblem(null);
     setFeedback(null);
+    setShowFinalScore(false);
+    usedProblemsRef.current = new Set(); // Reset used problems when changing level
+    setUsedProblems(new Set());
   }
 
   // Show level selector if no level chosen
-  if (!level || !problem) {
+  if (!level) {
     return <LevelSelector onSelectLevel={setLevel} />;
   }
 
+  // Show final score after completing all questions
+  if (showFinalScore) {
+    return (
+      <FinalScore
+        score={score}
+        totalQuestions={TOTAL_QUESTIONS}
+        onPlayAgain={handlePlayAgain}
+        onChangeLevel={handleChangeLevel}
+      />
+    );
+  }
+
+  if (!problem) {
+    return null;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-300 to-yellow-300 p-4 sm:p-8 flex flex-col">
-      <div className="max-w-2xl mx-auto w-full flex flex-col flex-1">
-        <AppTitle
-          leftButton={
-            <Button
-              onClick={handleChangeLevel}
-              variant="outline"
-              className="rounded-full bg-white/20 backdrop-blur-sm border-white/30 hover:bg-white/30 h-10 w-10 sm:h-12 sm:w-12 p-0 flex-shrink-0"
-              aria-label="Change Level"
-            >
-              <ArrowLeft className="size-5 sm:size-6 text-white" />
-            </Button>
-          }
-          rightButton={
-            <Button
-              onClick={handleReset}
-              variant="outline"
-              className="rounded-full bg-white/20 backdrop-blur-sm border-white/30 hover:bg-white/30 h-10 w-10 sm:h-12 sm:w-12 p-0 flex-shrink-0"
-              aria-label="Reset"
-            >
-              <RotateCcw className="size-5 sm:size-6 text-white" />
-            </Button>
-          }
-        />
-        
-        <div className="flex flex-col flex-1 justify-start pt-4 sm:pt-6 md:pt-8 gap-4 sm:gap-6">
-          <ScoreBoard 
-            score={score} 
-            totalAttempts={totalAttempts}
-            streak={streak}
-          />
-
-          <MathProblem 
-            problem={problem}
-            onAnswer={handleAnswer}
-            disabled={feedback !== null}
-            level={level}
-          />
-
-          <div className="flex justify-center min-h-[80px] sm:min-h-[100px] items-center">
-            <FeedbackMessage feedback={feedback} />
+    <div className="min-h-screen bg-gradient-to-br from-purple-400 via-pink-300 to-yellow-300 p-4 sm:p-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-2 sm:gap-3 bg-white/20 backdrop-blur-sm rounded-full px-4 sm:px-6 py-2 sm:py-3 shadow-lg">
+            <Sparkles className="size-6 sm:size-8 text-yellow-300 fill-yellow-300" />
+            <h1 className="text-white text-3xl sm:text-4xl md:text-5xl lg:text-6xl">
+              Math Adventure! 
+            </h1>
+            <Sparkles className="size-6 sm:size-8 text-yellow-300 fill-yellow-300" />
           </div>
         </div>
+        
+        {/* Progress Indicator */}
+        <div className="mb-6 bg-white/90 backdrop-blur-sm rounded-2xl p-4 sm:p-6 shadow-lg">
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <div className="text-lg sm:text-xl md:text-2xl text-purple-600">
+              Question {currentQuestion} of {TOTAL_QUESTIONS}
+            </div>
+            <div className="text-lg sm:text-xl md:text-2xl text-purple-600">
+              Score: {score}
+            </div>
+          </div>
+          {/* Progress Bar */}
+          <div className="w-full bg-purple-200 rounded-full h-3 sm:h-4 overflow-hidden mb-3">
+            <div
+              className="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full transition-all duration-500"
+              style={{ width: `${(currentQuestion / TOTAL_QUESTIONS) * 100}%` }}
+            />
+          </div>
+          {/* Change Level Button */}
+          <Button
+            onClick={handleChangeLevel}
+            variant="outline"
+            className="w-full sm:w-auto text-sm sm:text-base text-purple-600 border-purple-300 hover:bg-purple-50"
+          >
+            <ArrowLeft className="size-4 mr-2" />
+            Change Level
+          </Button>
+        </div>
+
+        <MathProblem 
+          problem={problem}
+          onAnswer={handleAnswer}
+          disabled={feedback !== null}
+          level={level}
+          feedback={feedback}
+        />
+
+        <FeedbackMessage feedback={feedback} />
       </div>
     </div>
   );

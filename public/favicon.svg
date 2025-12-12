@@ -1,12 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <defs>
-    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="starGradient" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#a855f7;stop-opacity:1" />
       <stop offset="50%" style="stop-color:#f472b6;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#fde047;stop-opacity:1" />
     </linearGradient>
   </defs>
-  <rect width="100" height="100" rx="20" fill="url(#gradient)"/>
-  <path d="M50 15 L55 35 L75 35 L60 48 L65 68 L50 55 L35 68 L40 48 L25 35 L45 35 Z" fill="white" stroke="white" stroke-width="2"/>
+  <rect width="100" height="100" rx="20" fill="url(#starGradient)"/>
+  <path d="M50 20 L58 42 L82 42 L63 55 L71 77 L50 62 L29 77 L37 55 L18 42 L42 42 Z" 
+        fill="white" 
+        stroke="#fde047" 
+        stroke-width="1.5"
+        stroke-linejoin="round"/>
+  <circle cx="50" cy="50" r="3" fill="#fde047" opacity="0.8"/>
 </svg>
-
